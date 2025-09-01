@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertidor de Texto a CSV</title>
+    <!-- Incluye Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl text-center border border-gray-200">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">Generador de Archivos CSV</h1>
+        <p class="text-gray-600 mb-6">Pega tus datos separados por comas y descarga un archivo CSV.</p>
+
+        <!-- Área de texto para la entrada de datos -->
+        <textarea id="dataInput"
+            rows="10"
+            placeholder="Ejemplo:
+nombre,apellido,correo
+Juan,Pérez,juan.perez@ejemplo.com
+Ana,García,ana.garcia@ejemplo.com"
+            class="w-full p-4 mb-4 text-gray-700 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 resize-none">
+        </textarea>
+
+        <!-- Botón para iniciar la conversión y descarga -->
+        <button id="downloadButton"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300 ease-in-out transform hover:scale-105">
+            Descargar Archivo CSV
+        </button>
+
+        <!-- Área para mostrar mensajes al usuario -->
+        <div id="message" class="mt-4 text-sm font-medium text-red-600"></div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const downloadButton = document.getElementById('downloadButton');
+            const dataInput = document.getElementById('dataInput');
+            const messageDiv = document.getElementById('message');
+
+            downloadButton.addEventListener('click', () => {
+                const data = dataInput.value.trim();
+
+                // Verifica si el área de texto está vacía
+                if (!data) {
+                    messageDiv.textContent = 'Por favor, pega el texto con los datos para convertir.';
+                    return;
+                }
+
+                // Limpia el mensaje de error si existiera
+                messageDiv.textContent = '';
+
+                // Crea un objeto Blob con el contenido de la cadena y el tipo MIME de CSV
+                const csvBlob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+
+                // Crea una URL para el Blob
+                const csvUrl = URL.createObjectURL(csvBlob);
+
+                // Crea un enlace temporal para la descarga
+                const tempLink = document.createElement('a');
+                tempLink.href = csvUrl;
+                tempLink.download = 'datos.csv';
+
+                // Agrega el enlace al cuerpo del documento (es necesario para que funcione en algunos navegadores)
+                document.body.appendChild(tempLink);
+
+                // Simula un clic en el enlace para iniciar la descarga
+                tempLink.click();
+
+                // Elimina el enlace del documento
+                document.body.removeChild(tempLink);
+
+                // Revoca la URL del objeto Blob para liberar memoria
+                URL.revokeObjectURL(csvUrl);
+
+                messageDiv.textContent = 'Archivo CSV generado y descargado exitosamente.';
+                messageDiv.classList.remove('text-red-600');
+                messageDiv.classList.add('text-green-600');
+            });
+        });
+    </script>
+
+</body>
+</html>
