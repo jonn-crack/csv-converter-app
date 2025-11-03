@@ -3,91 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convertidor de Texto a CSV</title>
-    <!-- Incluye Tailwind CSS -->
+    <title>Conversor de Texto a CSV</title>
+    <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+    <!-- Configuración de fuente y colores de Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-blue': '#1C64F2',
+                        'secondary-gray': '#F9FAFB',
+                    }
+                }
+            }
         }
+    </script>
+    <style>
+        /* Estilos base para la fuente Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="bg-secondary-gray min-h-screen flex items-center justify-center p-4 font-sans">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl text-center border border-gray-200">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">Generador de Archivos CSV</h1>
-        <p class="text-gray-600 mb-6">Pega tus datos separados por comas y descarga un archivo CSV.</p>
+    <div class="w-full max-w-3xl bg-white p-8 md:p-12 rounded-2xl shadow-xl space-y-8">
+        <header class="text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
+                Conversor Rápido a CSV
+            </h1>
+            <p class="text-gray-600 text-lg">
+                Pega tu texto separado por comas para convertirlo y descargarlo.
+            </p>
+        </header>
 
-        <!-- Área de texto para la entrada de datos -->
-        <textarea id="dataInput"
-            rows="10"
-            placeholder="Ejemplo:
-nombre,apellido,correo
-Juan,Pérez,juan.perez@ejemplo.com
-Ana,García,ana.garcia@ejemplo.com"
-            class="w-full p-4 mb-4 text-gray-700 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 resize-none">
-        </textarea>
+        <!-- Área de entrada de texto -->
+        <div class="space-y-4">
+            <label for="csv-input" class="block text-sm font-medium text-gray-700">
+                Pega tu texto aquí (Ej: Nombre,Edad,Ciudad\nJuan,30,NY)
+            </label>
+            <!-- CORRECCIÓN: Se eliminan los espacios de indentación entre las etiquetas de textarea -->
+            <textarea id="csv-input" rows="10" placeholder="Nombre,Edad,Ciudad&#10;Alice,28,Londres&#10;Bob,45,París"
+                      class="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-primary-blue focus:ring-primary-blue transition duration-150 shadow-inner resize-y text-gray-800"></textarea>
+        </div>
 
-        <!-- Botón para iniciar la conversión y descarga -->
-        <button id="downloadButton"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300 ease-in-out transform hover:scale-105">
-            Descargar Archivo CSV
-        </button>
+        <!-- Botones de acción -->
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <button id="download-button"
+                    class="w-full sm:w-auto px-6 py-3 bg-primary-blue text-white font-semibold rounded-xl hover:bg-blue-700 transition duration-300 shadow-lg shadow-blue-500/50 transform active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                Descargar Archivo CSV
+            </button>
+            <!-- Nuevo botón Limpiar Texto -->
+            <button id="clear-button"
+                    class="w-full sm:w-auto px-6 py-3 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition duration-300 shadow-lg shadow-gray-500/50 transform active:scale-95 focus:outline-none focus:ring-4 focus:ring-gray-300">
+                Limpiar Texto
+            </button>
+            <div id="message-box" class="hidden w-full sm:w-auto p-3 text-center rounded-xl bg-red-100 text-red-700 font-medium transition duration-300" role="alert">
+                ¡El contenido no puede estar vacío!
+            </div>
+        </div>
 
-        <!-- Área para mostrar mensajes al usuario -->
-        <div id="message" class="mt-4 text-sm font-medium text-red-600"></div>
-
+        <!-- Instrucciones opcionales -->
+        <footer class="pt-4 border-t border-gray-200">
+            <p class="text-sm text-gray-500 text-center">
+                El archivo se descargará con el nombre <code class="bg-gray-100 p-1 rounded">data.csv</code>.
+                El contenido se limpia de espacios en blanco al inicio/final antes de la descarga.
+            </p>
+        </footer>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const downloadButton = document.getElementById('downloadButton');
-            const dataInput = document.getElementById('dataInput');
-            const messageDiv = document.getElementById('message');
+            const downloadButton = document.getElementById('download-button');
+            const clearButton = document.getElementById('clear-button');
+            const csvInput = document.getElementById('csv-input');
+            const messageBox = document.getElementById('message-box');
 
-            downloadButton.addEventListener('click', () => {
-                const data = dataInput.value.trim();
+            // Función para limpiar el área de texto
+            function clearInput() {
+                csvInput.value = '';
+                messageBox.classList.add('hidden'); // Ocultar mensajes si los hubiera
+                csvInput.focus(); // Poner el foco para facilitar la siguiente acción
+            }
 
-                // Verifica si el área de texto está vacía
-                if (!data) {
-                    messageDiv.textContent = 'Por favor, pega el texto con los datos para convertir.';
+            // Función principal para convertir y descargar el texto.
+            function convertTextToCSV() {
+                // El método .trim() se encarga de eliminar los espacios en blanco
+                // al inicio y al final del contenido.
+                const csvContent = csvInput.value.trim(); 
+
+                // 1. Validación de contenido
+                if (!csvContent) {
+                    messageBox.textContent = '¡El contenido no puede estar vacío!';
+                    messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+                    messageBox.classList.add('bg-red-100', 'text-red-700');
                     return;
                 }
 
-                // Limpia el mensaje de error si existiera
-                messageDiv.textContent = '';
+                // Ocultar mensajes previos de error
+                messageBox.classList.add('hidden');
 
-                // Crea un objeto Blob con el contenido de la cadena y el tipo MIME de CSV
-                const csvBlob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+                // 2. Creación del Blob
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
-                // Crea una URL para el Blob
-                const csvUrl = URL.createObjectURL(csvBlob);
+                // 3. Creación del enlace de descarga
+                const link = document.createElement("a");
 
-                // Crea un enlace temporal para la descarga
-                const tempLink = document.createElement('a');
-                tempLink.href = csvUrl;
-                tempLink.download = 'datos.csv';
+                // Verificar si 'msSaveOrOpenBlob' está disponible (para IE/Edge)
+                if (navigator.msSaveOrOpenBlob) {
+                    // Para navegadores antiguos (IE/Edge)
+                    navigator.msSaveOrOpenBlob(blob, 'data.csv');
+                } else {
+                    // Para la mayoría de los navegadores modernos
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", "data.csv");
+                    
+                    // Agregar el link al DOM y simular clic
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    // Limpiar y remover el link
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
 
-                // Agrega el enlace al cuerpo del documento (es necesario para que funcione en algunos navegadores)
-                document.body.appendChild(tempLink);
+                // Mostrar mensaje de éxito temporal
+                messageBox.textContent = '✅ ¡Descarga iniciada!';
+                messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+                messageBox.classList.add('bg-green-100', 'text-green-700');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 3000);
+            }
 
-                // Simula un clic en el enlace para iniciar la descarga
-                tempLink.click();
-
-                // Elimina el enlace del documento
-                document.body.removeChild(tempLink);
-
-                // Revoca la URL del objeto Blob para liberar memoria
-                URL.revokeObjectURL(csvUrl);
-
-                messageDiv.textContent = 'Archivo CSV generado y descargado exitosamente.';
-                messageDiv.classList.remove('text-red-600');
-                messageDiv.classList.add('text-green-600');
-            });
+            // Asignar eventos a los botones
+            downloadButton.addEventListener('click', convertTextToCSV);
+            clearButton.addEventListener('click', clearInput);
         });
     </script>
-
 </body>
 </html>
